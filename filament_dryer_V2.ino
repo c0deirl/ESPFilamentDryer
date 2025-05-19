@@ -12,7 +12,6 @@ const char* password = "YOUR_PASSWORD";
 // Value to use for the display, Initialize as "Standby"
 char* displayvalue = "Standby";
 
-
 // Pin assignments
 #define DHTPIN 4
 #define DHTTYPE DHT22
