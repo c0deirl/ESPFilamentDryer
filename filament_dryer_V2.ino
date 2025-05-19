@@ -69,11 +69,11 @@ void setup() {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Filament Dryer Controller</title>
       <style>
-        body { font-family: Arial, sans-serif; background: #f7f7f7; color: #222; margin: 0; padding: 0;}
-        .container { max-width: 400px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #ccc; padding: 24px;}
-        h1 { text-align: center; margin-bottom: 0.5em; color: #2563eb;}
-        .reading { font-size: 1.4em; margin: 1em 0; text-align: center;}
-        .label { font-weight: bold; margin-bottom: 8px; display: block;}
+        body { font-family: Arial, sans-serif; background:rgb(46, 46, 46); color: #222; margin: 0; padding: 0;}
+        .container { max-width: 400px; margin: 40px auto; background:rgb(46, 46, 46); border-radius: 8px; box-shadow: 0 2px 8px #ccc; padding: 24px;}
+        h1 { text-align: center; margin-bottom: 0.5em; color:rgb(235, 133, 37);}
+        .reading { font-size: 1.4em; margin: 1em 0; color:rgb(230, 230, 230); text-align: center;}
+        .label { font-weight: bold; margin-bottom: 8px; color:rgb(230, 230, 230); display: block;}
         .form-group { margin: 16px 0; text-align: center;}
         input[type="number"] { width: 80px; padding: 0.5em; margin-right: 8px;}
         .duration-btns button {
@@ -101,6 +101,17 @@ void setup() {
           cursor: pointer;
           transition: background 0.2s;
         }
+		a:link, a:visited {
+			
+			color: white;
+			
+			text-align: center;
+			text-decoration: none;
+			}
+
+			a:hover, a:active {
+			background-color: red;
+			}
         .submit-btn:hover { background: #047857;}
         .status { margin-top: 18px; text-align: center;}
         .footer { margin-top: 32px; text-align: center; font-size: 0.95em; color: #888;}
@@ -136,7 +147,7 @@ void setup() {
           </div>
         </form>
         <div class="status" id="statusMsg"></div>
-        <div class="footer">ESP Filament Dryer | Github - c0deIRL &copy; 2025</div>
+        <div class="footer">ESP Filament Dryer | Github - <a href="https://github.com/c0deirl" target="_blank" >c0deIRL </a> &copy; 2025</div>
       </div>
       <script>
         // Duration button selection
