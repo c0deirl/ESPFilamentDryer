@@ -43,7 +43,7 @@ void setup() {
   dht.begin();
 
   // Initialize SSD1306 display
-  if (!display.begin(SSD1306_I2C_ADDRESS, 0x3C)) {
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println(F("SSD1306 allocation failed"));
     for (;;);
   }
@@ -205,8 +205,8 @@ void setup() {
     // Handle sensor errors (NaN)
     String response;
     StaticJsonDocument<100> doc;
-    doc["temperature"] = isnan(t) ? nullptr : t;
-    doc["humidity"] = isnan(h) ? nullptr : h;
+    doc["temperature"] = isnan(t) ? 0.0 : t;
+    doc["humidity"] = isnan(h) ? 0.0 : h;
     serializeJson(doc, response);
     request->send(200, "application/json", response);
   });
