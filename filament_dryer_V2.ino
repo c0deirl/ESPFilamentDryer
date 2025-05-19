@@ -9,6 +9,10 @@
 const char* ssid = "YOUR_SSID";
 const char* password = "YOUR_PASSWORD";
 
+// Value to use for the display, Initialize as "Standby"
+char* displayvalue = "Standby";
+
+
 // Pin assignments
 #define DHTPIN 4
 #define DHTTYPE DHT22
@@ -30,6 +34,7 @@ float setTemperature = 25.0; // Default set temperature
 int duration = 0; // Default duration in minutes
 unsigned long startTime = 0;
 bool heating = false;
+bool status = false;
 
 void setup() {
   // Initialize serial port
@@ -88,7 +93,7 @@ void setup() {
           transition: background 0.2s;
         }
         .duration-btns button.selected, .duration-btns button:hover {
-          background: #1d4ed8;
+          background:rgb(11, 38, 114);
         }
         .submit-btn {
           margin-top: 18px;
@@ -239,6 +244,13 @@ void loop() {
     }
   }
 
+  if (heating=false) {
+    displayvalue = "Standby";
+ }
+    else {
+        displayvalue = "Drying";
+    }
+  
   // Update display
   display.clearDisplay();
   display.setTextSize(1);
@@ -250,6 +262,7 @@ void loop() {
   display.print("Humidity: ");
   display.print(dht.readHumidity());
   display.println(" %");
+  display.println(displayvalue);
   display.display();
 
   delay(1000);
