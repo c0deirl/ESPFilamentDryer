@@ -230,9 +230,17 @@ void setup() {
 void loop() {
   if (heating) {
     float currentTemp = dht.readTemperature();
-    if (currentTemp < setTemperature) {
+
+    // Set the Hysteresis to prevent very quickly turning on and off
+    // This allows the temperature to go above or below the set point by X degrees before triggering the heater
+
+    float hysteresis = 5;
+    
+    if (currentTemp < setTemperature - hysteresis) {
       digitalWrite(HEATER_PIN, HIGH); // Turn on heater
-    } else {
+    } 
+    else if (currentTemp > setTemperature + hysteresis)
+    {
       digitalWrite(HEATER_PIN, LOW); // Turn off heater
     }
 
