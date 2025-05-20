@@ -11,5 +11,5 @@ Materials:
 - 5v Standard Relay - 10a 250v
 - SSD1306 Display
 - DHT22 Temperature and Humidity sensor
-<br>
+
 ![FilamentDryer](https://github.com/user-attachments/assets/97a9a222-02ea-4390-a8a3-ec0388e8eb22)
