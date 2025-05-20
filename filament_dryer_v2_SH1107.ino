@@ -26,7 +26,7 @@ DHT dht(DHTPIN, DHTTYPE);
 #define SCREEN_HEIGHT 128
 #define OLED_RESET -1
 Adafruit_SH1107 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET, 1000000, 1000000);
-//setRotation(1); //Set the screen orientation
+//setRotation(1); //Set the screen orientation in the setup section
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
