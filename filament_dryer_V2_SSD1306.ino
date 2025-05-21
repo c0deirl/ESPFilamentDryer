@@ -1,3 +1,7 @@
+// This version of the filament dryer is for use with a SSD1306 OLED Display. This is a small display, but should allow you to
+// see everything you need on the display. It will start with the Temp and Humidity levels, and should display whether or not it
+// is on standby, or drying the filament.
+
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
 #include <Adafruit_Sensor.h>
