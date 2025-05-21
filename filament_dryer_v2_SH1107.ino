@@ -44,9 +44,9 @@ void setup() {
   // Initialize DHT sensor
   dht.begin();
 
-  // Initialize SSD1306 display
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-    Serial.println(F("SSD1306 allocation failed"));
+  // Initialize SH1107 display
+  if (!display.begin(0x3c, true)) {
+    Serial.println(F("SH1107 allocation failed"));
     for (;;);
   }
   display.clearDisplay();
