@@ -25,7 +25,7 @@ DHT dht(DHTPIN, DHTTYPE);
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 128
 #define OLED_RESET -1
-Adafruit_SH1107 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET, 1000000, 1000000);
+Adafruit_SH1107 display = Adafruit_SH1107(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET, 1000000, 100000);
 //setRotation(1); //Set the screen orientation in the setup section
 
 // Create AsyncWebServer object on port 80
@@ -49,7 +49,7 @@ void setup() {
     Serial.println(F("SH1107 allocation failed"));
     for (;;);
   }
-  display.clearDisplay();
+  display.clearDisplay(); // Clear the display on startup
   display.setRotation(1); // Set orientation of the screen if needed
   display.setTextSize(1); // Set the default text size
 
