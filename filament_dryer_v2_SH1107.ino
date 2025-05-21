@@ -15,8 +15,8 @@ char* displayvalue = "Standby";
 // Pin assignments
 #define DHTPIN 4
 #define DHTTYPE DHT22
-#define HEATER_PIN 5
-#define FAN_PIN 6
+#define HEATER_PIN 17
+#define FAN_PIN 18
 
 // Initialize DHT sensor
 DHT dht(DHTPIN, DHTTYPE);
