@@ -256,7 +256,7 @@ void loop() {
       heating = false;
       digitalWrite(HEATER_PIN, LOW); // Turn off heater
       digitalWrite(FAN_PIN, LOW); // Turn off fan
-      Serial.println("Turn Off X2...");
+      Serial.println("Finished");
       displayvalue = "Standby";
     }
   }
