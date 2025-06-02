@@ -14,4 +14,6 @@ Hosts a web interface, that is connected to your wifi (be sure to replace the wi
 - SSD1306 Display
 - DHT22 Temperature and Humidity sensor
 
+## Pictures and Wiring Diagram
 ![FilamentDryer](https://github.com/user-attachments/assets/97a9a222-02ea-4390-a8a3-ec0388e8eb22)
+![SCH_ESP32 Filament Dryer_1-P1_2025-06-02](https://github.com/user-attachments/assets/0e08a190-fa27-4241-ada7-dba4ede1a624)
