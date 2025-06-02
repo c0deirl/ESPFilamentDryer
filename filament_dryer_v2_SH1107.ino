@@ -6,8 +6,8 @@
 #include <ArduinoJson.h> // For JSON API
 
 // Replace with your network credentials
-const char* ssid = "N8MDG";
-const char* password = "mattg123";
+const char* ssid = "SSID HERE";
+const char* password = "PASSWORD HERE";
 
 // Value to use for the display, Initialize as "Standby"
 char* displayvalue = "Standby";
@@ -15,7 +15,7 @@ char* displayvalue = "Standby";
 // Pin assignments
 #define DHTPIN 4
 #define DHTTYPE DHT22
-#define HEATER_PIN 17
+#define HEATER_PIN 16
 #define FAN_PIN 18
 
 // Initialize DHT sensor
@@ -257,7 +257,7 @@ void loop() {
       digitalWrite(HEATER_PIN, LOW); // Turn off heater
       digitalWrite(FAN_PIN, LOW); // Turn off fan
       Serial.println("Finished");
-      displayvalue = "Standby";
+      displayvalue = "Finished";
     }
   }
 
