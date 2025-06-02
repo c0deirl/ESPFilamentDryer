@@ -150,6 +150,9 @@ void setup() {
           <div class="form-group">
             <button type="submit" class="submit-btn">Start</button>
           </div>
+          <div class="form-group">
+            <button type="button" id="stopBtn" class="submit-btn" style="background:#dc2626;">Stop</button>
+          </div>
         </form>
         <div class="status" id="statusMsg"></div>
         <div class="footer">ESP Filament Dryer | Github - <a href="https://github.com/c0deirl" target="_blank" >c0deIRL </a> &copy; 2025</div>
@@ -190,8 +193,14 @@ void setup() {
             body: fd
           }).then(r => r.text()).then(msg => {
             document.getElementById('statusMsg').innerHTML = msg;
-          });
-        });
+        // Stop button handler
+        document.getElementById('stopBtn').addEventListener('click', function() {
+          fetch('/stop', { method: 'POST' })
+          .then(r => r.text())
+          .then(msg => {
+        document.getElementById('statusMsg').innerHTML = msg;
+    });
+});
       </script>
     </body>
     </html>
@@ -223,7 +232,20 @@ void setup() {
     } else {
       request->send(400, "text/html", "<span style='color:red;'>Invalid input.</span>");
     }
-  });
+  }
+  // Stop endpoint to reset system
+  server.on("/stop", HTTP_POST, [](AsyncWebServerRequest *request) {
+    heating = false;
+    setTemperature = 20.0; // Reset to default
+    duration = 0;
+    startTime = 0;
+    digitalWrite(HEATER_PIN, LOW);
+    digitalWrite(FAN_PIN, LOW);
+    displayvalue = "Standby";
+    request->send(200, "text/html", "<span style='color:green;'>Stopped and reset.</span>");
+    }
+  );
+
 
   server.begin();
 }
