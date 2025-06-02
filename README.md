@@ -6,7 +6,7 @@ I modified a Creality Filament Dryer 2.0 after the rotary encoder went bad in it
 Hosts a web interface, that is connected to your wifi (be sure to replace the wifi credentials in the code), and allows you to control the dryer remotely.  
 &nbsp;
 
-Materials:
+## Materials:
 
 - ESP32 Dev Board
 - 5V Solid State Relay - ZeroCrossing - 250v 2A
