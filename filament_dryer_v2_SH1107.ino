@@ -12,7 +12,7 @@ const char* password = "PASSWORD HERE";
 // Value to use for the display, Initialize as "Standby"
 char* displayvalue = "Standby";
 
-// Pin assignments
+// GPIO Pin assignments
 #define DHTPIN 4
 #define DHTTYPE DHT22
 #define HEATER_PIN 16
@@ -26,19 +26,19 @@ DHT dht(DHTPIN, DHTTYPE);
 #define SCREEN_HEIGHT 128
 #define OLED_RESET -1
 Adafruit_SH1107 display = Adafruit_SH1107(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET, 1000000, 100000);
-//setRotation(1); //Set the screen orientation in the setup section
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
 
 float setTemperature = 20.0; // Default set temperature
 int duration = 0; // Default duration in minutes
-unsigned long startTime = 0;
+unsigned long startTime = 0; //Initial Start Time
+//Set the status values to false on startup
 bool heating = false;
 bool status = false;
 
 void setup() {
-  // Initialize serial port
+  // Initialize serial port for debug connenctivity
   Serial.begin(115200);
 
   // Initialize DHT sensor
@@ -64,7 +64,7 @@ void setup() {
   }
   Serial.println("Connected to WiFi");
 
-  // Start server
+  // Start server and configure the HTML for the web interface
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     String html = R"rawliteral(
     <!DOCTYPE html>
@@ -221,13 +221,13 @@ void setup() {
     request->send(200, "application/json", response);
   });
 
+  // Web request to turn the heater on and start the timer
   server.on("/set", HTTP_POST, [](AsyncWebServerRequest *request) {
     if (request->hasParam("temp", true) && request->hasParam("duration", true)) {
       setTemperature = request->getParam("temp", true)->value().toFloat();
       duration = request->getParam("duration", true)->value().toInt();
       startTime = millis();
       heating = true;
-      //digitalWrite(FAN_PIN, HIGH); // Turn on fan
       request->send(200, "text/html", "<span style='color:green;'>Settings updated &amp; started.</span>");
     } else {
       request->send(400, "text/html", "<span style='color:red;'>Invalid input.</span>");
@@ -255,18 +255,19 @@ void loop() {
     float currentTemp = dht.readTemperature();
 
     // Set the Hysteresis to prevent very quickly turning on and off
-    // This allows the temperature to go above or below the set point by X degrees before triggering the heater
+    // This allows the temperature to go above or below the set point by X degrees before triggering the heater to stop or start
+    // This should only be needed if using a standard relay, instead of a solid state relay. Saves on wear on the contacts
 
-    float hysteresis = 1;
+    float hysteresis = 3;
     
     //if (currentTemp < setTemperature - hysteresis) {
       if (currentTemp < setTemperature) {
       digitalWrite(HEATER_PIN, HIGH); // Turn on heater
       digitalWrite(FAN_PIN, HIGH); // Turn on fan
       Serial.println("Turn On...");
-      displayvalue = "Drying";
+      displayvalue = "Heating";
     } 
-    else if (currentTemp > setTemperature)
+    else if (currentTemp > (setTemperature - hysteresis)) //Subtracting the hysteresis allows the latent heat in the coil to continue heating the air after power is removed
     {
       digitalWrite(HEATER_PIN, LOW); // Turn off heater
       digitalWrite(FAN_PIN, LOW); // Turn off fan
@@ -282,13 +283,6 @@ void loop() {
       displayvalue = "Finished";
     }
   }
-
- // if (heating = false) {
- //   displayvalue = "Standby";
-// }
- //   else if (heating = true) {
- //       displayvalue = "Drying";
- //   }
   
   // Update display
   display.clearDisplay();
@@ -310,7 +304,7 @@ void loop() {
   display.println();
   display.setTextSize(1);
   display.setCursor(0, 120);
-  display.println(WiFi.localIP());
+  display.println(WiFi.localIP()); // Display the local IP, this is optional
   display.display();
 
   delay(1000);
