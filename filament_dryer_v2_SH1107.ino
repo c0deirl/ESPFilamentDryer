@@ -53,6 +53,7 @@ void setup() {
   // Initialize relay pins
   pinMode(HEATER_PIN, OUTPUT);
   pinMode(FAN_PIN, OUTPUT);
+  // If using an active low SSR, set the heater pin to default to HIGH rather than low.
   digitalWrite(HEATER_PIN, LOW);
   digitalWrite(FAN_PIN, LOW);
 
@@ -245,7 +246,6 @@ void setup() {
     request->send(200, "text/html", "<span style='color:green;'>Stopped and reset.</span>");
     }
   );
-
 
   server.begin();
 }
