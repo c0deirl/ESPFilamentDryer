@@ -1,25 +1,21 @@
-// This version of the filament dryer is for use with a SSD1306 OLED Display. This is a small display, but should allow you to
-// see everything you need on the display. It will start with the Temp and Humidity levels, and should display whether or not it
-// is on standby, or drying the filament.
-
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
-#include <Adafruit_SSD1306.h>
+#include <Adafruit_SSD1306.h> // For SSD1306 Display
 #include <ArduinoJson.h> // For JSON API
 
 // Replace with your network credentials
-const char* ssid = "YOUR_SSID";
-const char* password = "YOUR_PASSWORD";
+const char* ssid = "SSID HERE";
+const char* password = "PASSWORD HERE";
 
 // Value to use for the display, Initialize as "Standby"
 char* displayvalue = "Standby";
 
-// Pin assignments
+// GPIO Pin assignments
 #define DHTPIN 4
 #define DHTTYPE DHT22
-#define HEATER_PIN 17
+#define HEATER_PIN 16
 #define FAN_PIN 18
 
 // Initialize DHT sensor
@@ -33,21 +29,22 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
 
-float setTemperature = 25.0; // Default set temperature
+float setTemperature = 20.0; // Default set temperature
 int duration = 0; // Default duration in minutes
-unsigned long startTime = 0;
+unsigned long startTime = 0; //Initial Start Time
+//Set the status values to false on startup
 bool heating = false;
 bool status = false;
 
 void setup() {
-  // Initialize serial port
+  // Initialize serial port for debug connenctivity
   Serial.begin(115200);
 
   // Initialize DHT sensor
   dht.begin();
 
   // Initialize SSD1306 display
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println(F("SSD1306 allocation failed"));
     for (;;);
   }
@@ -56,6 +53,7 @@ void setup() {
   // Initialize relay pins
   pinMode(HEATER_PIN, OUTPUT);
   pinMode(FAN_PIN, OUTPUT);
+  // If using an active low SSR, set the heater pin to default to HIGH rather than low.
   digitalWrite(HEATER_PIN, LOW);
   digitalWrite(FAN_PIN, LOW);
 
@@ -67,7 +65,7 @@ void setup() {
   }
   Serial.println("Connected to WiFi");
 
-  // Start server
+  // Start server and configure the HTML for the web interface
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     String html = R"rawliteral(
     <!DOCTYPE html>
@@ -153,6 +151,9 @@ void setup() {
           <div class="form-group">
             <button type="submit" class="submit-btn">Start</button>
           </div>
+          <div class="form-group">
+            <button type="button" id="stopBtn" class="submit-btn" style="background:#dc2626;">Stop</button>
+          </div>
         </form>
         <div class="status" id="statusMsg"></div>
         <div class="footer">ESP Filament Dryer | Github - <a href="https://github.com/c0deirl" target="_blank" >c0deIRL </a> &copy; 2025</div>
@@ -193,8 +194,14 @@ void setup() {
             body: fd
           }).then(r => r.text()).then(msg => {
             document.getElementById('statusMsg').innerHTML = msg;
-          });
-        });
+        // Stop button handler
+        document.getElementById('stopBtn').addEventListener('click', function() {
+          fetch('/stop', { method: 'POST' })
+          .then(r => r.text())
+          .then(msg => {
+        document.getElementById('statusMsg').innerHTML = msg;
+    });
+});
       </script>
     </body>
     </html>
@@ -215,52 +222,67 @@ void setup() {
     request->send(200, "application/json", response);
   });
 
+  // Web request to turn the heater on and start the timer
   server.on("/set", HTTP_POST, [](AsyncWebServerRequest *request) {
     if (request->hasParam("temp", true) && request->hasParam("duration", true)) {
       setTemperature = request->getParam("temp", true)->value().toFloat();
       duration = request->getParam("duration", true)->value().toInt();
       startTime = millis();
       heating = true;
-      digitalWrite(FAN_PIN, HIGH); // Turn on fan
       request->send(200, "text/html", "<span style='color:green;'>Settings updated &amp; started.</span>");
     } else {
       request->send(400, "text/html", "<span style='color:red;'>Invalid input.</span>");
     }
-  });
+  }
+  // Stop endpoint to reset system
+  server.on("/stop", HTTP_POST, [](AsyncWebServerRequest *request) {
+    heating = false;
+    setTemperature = 20.0; // Reset to default
+    duration = 0;
+    startTime = 0;
+    digitalWrite(HEATER_PIN, LOW);
+    digitalWrite(FAN_PIN, LOW);
+    displayvalue = "Standby";
+    request->send(200, "text/html", "<span style='color:green;'>Stopped and reset.</span>");
+    }
+  );
 
   server.begin();
 }
 
 void loop() {
-  if (heating) {
+  if (heating = true) {
     float currentTemp = dht.readTemperature();
 
     // Set the Hysteresis to prevent very quickly turning on and off
-    // This allows the temperature to go above or below the set point by X degrees before triggering the heater
+    // This allows the temperature to go above or below the set point by X degrees before triggering the heater to stop or start
+    // This should only be needed if using a standard relay, instead of a solid state relay. Saves on wear on the contacts
 
-    float hysteresis = 5;
+    float hysteresis = 3;
     
-    if (currentTemp < setTemperature - hysteresis) {
+    //if (currentTemp < setTemperature - hysteresis) {
+      if (currentTemp < setTemperature) {
       digitalWrite(HEATER_PIN, HIGH); // Turn on heater
+      digitalWrite(FAN_PIN, HIGH); // Turn on fan
+      Serial.println("Turn On...");
+      displayvalue = "Heating";
     } 
-    else if (currentTemp > setTemperature + hysteresis)
+    else if (currentTemp > (setTemperature - hysteresis)) //Subtracting the hysteresis allows the latent heat in the coil to continue heating the air after power is removed
     {
       digitalWrite(HEATER_PIN, LOW); // Turn off heater
+      digitalWrite(FAN_PIN, LOW); // Turn off fan
+      Serial.println("Turn Off...");
+      displayvalue = "Standby";
     }
 
     if ((millis() - startTime) > (duration * 60000)) {
       heating = false;
       digitalWrite(HEATER_PIN, LOW); // Turn off heater
       digitalWrite(FAN_PIN, LOW); // Turn off fan
+      Serial.println("Finished");
+      displayvalue = "Finished";
     }
   }
-
-  if (heating=false) {
-    displayvalue = "Standby";
- }
-    else {
-        displayvalue = "Drying";
-    }
   
   // Update display
   display.clearDisplay();
@@ -274,6 +296,7 @@ void loop() {
   display.print(dht.readHumidity());
   display.println(" %");
   display.println(displayvalue);
+  display.println(WiFi.localIP()); // Display the local IP, this is optional
   display.display();
 
   delay(1000);

@@ -21,7 +21,7 @@ char* displayvalue = "Standby";
 // Initialize DHT sensor
 DHT dht(DHTPIN, DHTTYPE);
 
-// Initialize SSD1306 display
+// Initialize SH1107 display
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 128
 #define OLED_RESET -1
