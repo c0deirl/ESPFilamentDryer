@@ -107,20 +107,29 @@ void setup() {
           cursor: pointer;
           transition: background 0.2s;
         }
-		a:link, a:visited {
-			
-			color: white;
-			
-			text-align: center;
-			text-decoration: none;
-			}
-
-			a:hover, a:active {
-			background-color: red;
-			}
         .submit-btn:hover { background: #047857;}
         .status { margin-top: 18px; text-align: center;}
         .footer { margin-top: 32px; text-align: center; font-size: 0.95em; color: #888;}
+        .stop-btn {
+          margin-top: 10px;
+          background: #dc2626;
+          color: #fff;
+          border: none;
+          border-radius: 4px;
+          padding: 10px 28px;
+          font-size: 1em;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .stop-btn:hover { background: #7f1d1d;}
+        a:link, a:visited {
+          color: white;
+          text-align: center;
+          text-decoration: none;
+        }
+        a:hover, a:active {
+          background-color: red;
+        }
       </style>
     </head>
     <body>
@@ -151,10 +160,10 @@ void setup() {
           <div class="form-group">
             <button type="submit" class="submit-btn">Start</button>
           </div>
-          <div class="form-group">
-            <button type="button" id="stopBtn" class="submit-btn" style="background:#dc2626;">Stop</button>
-          </div>
         </form>
+        <div class="form-group">
+          <button type="button" id="stopBtn" class="stop-btn">Stop</button>
+        </div>
         <div class="status" id="statusMsg"></div>
         <div class="footer">ESP Filament Dryer | Github - <a href="https://github.com/c0deirl" target="_blank" >c0deIRL </a> &copy; 2025</div>
       </div>
@@ -194,14 +203,17 @@ void setup() {
             body: fd
           }).then(r => r.text()).then(msg => {
             document.getElementById('statusMsg').innerHTML = msg;
+          });
+        });
+
         // Stop button handler
         document.getElementById('stopBtn').addEventListener('click', function() {
           fetch('/stop', { method: 'POST' })
-          .then(r => r.text())
-          .then(msg => {
-        document.getElementById('statusMsg').innerHTML = msg;
-    });
-});
+            .then(r => r.text())
+            .then(msg => {
+              document.getElementById('statusMsg').innerHTML = msg;
+            });
+        });
       </script>
     </body>
     </html>
