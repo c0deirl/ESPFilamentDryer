@@ -11,10 +11,10 @@ const char* ssid = "SSID HERE";
 const char* password = "PASSWORD HERE";
 
 // MQTT broker settings
-const char* mqtt_server = "MQTT_BROKER_IP";    // e.g., "192.168.1.10" or "broker.hivemq.com"
+const char* mqtt_server = "192.168.1.71";    // e.g., "192.168.1.10" or "broker.hivemq.com"
 const int mqtt_port = 1883;                    // default MQTT port
-const char* mqtt_user = "MQTT_USER";           // set to "" if no auth
-const char* mqtt_pass = "MQTT_PASS";           // set to "" if no auth
+const char* mqtt_user = "dryer";           // set to "" if no auth
+const char* mqtt_pass = "test";           // set to "" if no auth
 const char* mqtt_topic = "espfilamentdryer/sensor"; // topic for sensor data
 
 WiFiClient espClient;
@@ -82,7 +82,7 @@ void reconnect_mqtt() {
       if (mqttClient.connect("ESPFilamentDryer", mqtt_user, mqtt_pass)) {
         Serial.println("connected (with auth)");
       } else {
-        Serial.print("failed, rc=");
+        Serial.print("userpassfailed, rc=");
         Serial.print(mqttClient.state());
         Serial.println(" try again in 5 seconds");
         delay(5000);
@@ -122,6 +122,7 @@ void setup() {
 
  setup_wifi();
 
+  mqttClient.setServer(mqtt_server, mqtt_port);
   // Start server and configure the HTML for the web interface
 
 server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -396,7 +397,9 @@ if (!mqttClient.connected()) {
   // Serial Print remaining Time
   Serial.println("Start Time = ");
   Serial.println(startTime);
-  
+  //timeremaining = (millis() - startTime);
+ // Serial.println("Time Remaining = ");
+ // Serial.println(timeremaining);
 
  // MQTT sensor publish
   unsigned long now = millis();
