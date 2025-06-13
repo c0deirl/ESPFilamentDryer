@@ -396,9 +396,7 @@ if (!mqttClient.connected()) {
   // Serial Print remaining Time
   Serial.println("Start Time = ");
   Serial.println(startTime);
-  timeremaining = (millis() - startTime);
-  Serial.println("Time Remaining = ");
-  Serial.println(timeremaining);
+  
 
  // MQTT sensor publish
   unsigned long now = millis();
