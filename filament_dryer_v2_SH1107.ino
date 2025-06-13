@@ -4,10 +4,21 @@
 #include <DHT.h>
 #include <Adafruit_SH110X.h> // For SH1107 Display
 #include <ArduinoJson.h> // For JSON API
+#include <PubSubClient.h> // MQTT Library										 
 
 // Replace with your network credentials
-const char* ssid = "SSID HERE";
-const char* password = "PASSWORD HERE";
+const char* ssid = "N8MDG";
+const char* password = "mattg123";
+
+// MQTT broker settings
+const char* mqtt_server = "MQTT_BROKER_IP";    // e.g., "192.168.1.10" or "broker.hivemq.com"
+const int mqtt_port = 1883;                    // default MQTT port
+const char* mqtt_user = "MQTT_USER";           // set to "" if no auth
+const char* mqtt_pass = "MQTT_PASS";           // set to "" if no auth
+const char* mqtt_topic = "espfilamentdryer/sensor"; // topic for sensor data
+
+WiFiClient espClient;
+PubSubClient mqttClient(espClient);					   								   
 
 // Value to use for the display, Initialize as "Standby"
 char* displayvalue = "Standby";
@@ -32,10 +43,62 @@ AsyncWebServer server(80);
 
 float setTemperature = 20.0; // Default set temperature
 int duration = 0; // Default duration in minutes
+
 unsigned long startTime = 0; //Initial Start Time
 //Set the status values to false on startup
 bool heating = false;
 bool status = false;
+
+// Create the MQTT section
+
+unsigned long lastMqttPublish = 0;
+const unsigned long mqttPublishInterval = 5000; // publish interval in ms (e.g., every 5 seconds)
+
+void setup_wifi() {
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.print("Connected to WiFi. IP: ");
+  Serial.println(WiFi.localIP());
+}
+
+void reconnect_mqtt() {
+  // Loop until we're reconnected
+  while (!mqttClient.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    // Attempt to connect
+    if (mqtt_user[0] == '\0') {
+      if (mqttClient.connect("ESPFilamentDryer")) {
+        Serial.println("connected (no auth)");
+      } else {
+        Serial.print("failed, rc=");
+        Serial.print(mqttClient.state());
+        Serial.println(" try again in 5 seconds");
+        delay(5000);
+      }
+    } else {
+      if (mqttClient.connect("ESPFilamentDryer", mqtt_user, mqtt_pass)) {
+        Serial.println("connected (with auth)");
+      } else {
+        Serial.print("failed, rc=");
+        Serial.print(mqttClient.state());
+        Serial.println(" try again in 5 seconds");
+        delay(5000);
+      }
+    }
+  }
+}
+
+void publishSensorData(float temperature, float humidity) {
+  StaticJsonDocument<128> doc;
+  doc["temperature"] = temperature;
+  doc["humidity"] = humidity;
+  char payload[128];
+  serializeJson(doc, payload);
+  mqttClient.publish(mqtt_topic, payload);
+}						  
 
 void setup() {
   // Initialize serial port for debug connenctivity
@@ -57,16 +120,11 @@ void setup() {
   digitalWrite(HEATER_PIN, LOW);
   digitalWrite(FAN_PIN, LOW);
 
-  // Connect to Wi-Fi
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting to WiFi...");
-  }
-  Serial.println("Connected to WiFi");
+ setup_wifi();
 
   // Start server and configure the HTML for the web interface
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+
+server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     String html = R"rawliteral(
     <!DOCTYPE html>
     <html lang="en">
@@ -143,6 +201,11 @@ void setup() {
           <span class="label">Current Humidity:</span>
           <span id="humVal">--</span> %
         </div>
+		<div class="reading">
+          <span class="label">Time Remaining:</span>
+          <span id="timeRemainVal">--</span>
+          <span id="timeRemainUnit">min</span>
+        </div>  
         <form id="settingsForm" method="POST" action="/set">
           <div class="form-group">
             <span class="label">Set Temperature (&deg;C):</span>
@@ -189,6 +252,19 @@ void setup() {
               document.getElementById('tempVal').textContent = data.temperature !== null ? data.temperature : '--';
               document.getElementById('humVal').textContent = data.humidity !== null ? data.humidity : '--';
             });
+				// Fetch and update time remaining
+          fetch('/api/remaining')
+            .then(r => r.json())
+            .then(data => {
+              let min = data.minutes;
+              if (typeof min !== "undefined" && min > 0) {
+                document.getElementById('timeRemainVal').textContent = min;
+                document.getElementById('timeRemainUnit').textContent = "min";
+              } else {
+                document.getElementById('timeRemainVal').textContent = "--";
+                document.getElementById('timeRemainUnit').textContent = "min";
+              }
+            });
         }
         setInterval(updateReadings, 2000);
         updateReadings();
@@ -234,18 +310,34 @@ void setup() {
     request->send(200, "application/json", response);
   });
 
+ // --- New: API endpoint for time remaining ---
+  server.on("/api/remaining", HTTP_GET, [](AsyncWebServerRequest *request){
+    unsigned long timeLeft = 0;
+    if (heating && duration > 0) {
+      unsigned long elapsed = (millis() - startTime) / 60000; // in minutes
+      timeLeft = (duration > elapsed) ? (duration - elapsed) : 0;
+    }
+    String response;
+    StaticJsonDocument<64> doc;
+    doc["minutes"] = timeLeft;
+    serializeJson(doc, response);
+    request->send(200, "application/json", response);
+  });
   // Web request to turn the heater on and start the timer
+		
   server.on("/set", HTTP_POST, [](AsyncWebServerRequest *request) {
     if (request->hasParam("temp", true) && request->hasParam("duration", true)) {
       setTemperature = request->getParam("temp", true)->value().toFloat();
       duration = request->getParam("duration", true)->value().toInt();
       startTime = millis();
       heating = true;
+												   
       request->send(200, "text/html", "<span style='color:green;'>Settings updated &amp; started.</span>");
     } else {
       request->send(400, "text/html", "<span style='color:red;'>Invalid input.</span>");
     }
   }
+  );
   // Stop endpoint to reset system
   server.on("/stop", HTTP_POST, [](AsyncWebServerRequest *request) {
     heating = false;
@@ -263,6 +355,11 @@ void setup() {
 }
 
 void loop() {
+if (!mqttClient.connected()) {
+    reconnect_mqtt();
+  }
+  mqttClient.loop();
+  
   if (heating = true) {
     float currentTemp = dht.readTemperature();
 
@@ -270,48 +367,67 @@ void loop() {
     // This allows the temperature to go above or below the set point by X degrees before triggering the heater to stop or start
     // This should only be needed if using a standard relay, instead of a solid state relay. Saves on wear on the contacts
 
-    float hysteresis = 3;
+    float hysteresis = 1;
     
     //if (currentTemp < setTemperature - hysteresis) {
       if (currentTemp < setTemperature) {
-      digitalWrite(HEATER_PIN, HIGH); // Turn on heater
+      digitalWrite(HEATER_PIN, LOW); // Turn on heater
       digitalWrite(FAN_PIN, HIGH); // Turn on fan
       Serial.println("Turn On...");
       displayvalue = "Heating";
     } 
-    else if (currentTemp > (setTemperature - hysteresis)) //Subtracting the hysteresis allows the latent heat in the coil to continue heating the air after power is removed
+    else if (currentTemp > (setTemperature)) //Subtracting the hysteresis allows the latent heat in the coil to continue heating the air after power is removed
     {
-      digitalWrite(HEATER_PIN, LOW); // Turn off heater
-      digitalWrite(FAN_PIN, HIGH); // Keep fan running
+      digitalWrite(HEATER_PIN, HIGH); // Turn off heater
+      digitalWrite(FAN_PIN, HIGH); // Keep Fan On
       Serial.println("Turn Off...");
       displayvalue = "Standby";
     }
 
     if ((millis() - startTime) > (duration * 60000)) {
       heating = false;
-      digitalWrite(HEATER_PIN, LOW); // Turn off heater
+      digitalWrite(HEATER_PIN, HIGH); // Turn off heater
       digitalWrite(FAN_PIN, LOW); // Turn off fan
       Serial.println("Finished");
-      displayvalue = "Finished";
+      displayvalue = "STOP";
     }
   }
   
-  // Update display
+  // Serial Print remaining Time
+  Serial.println("Start Time = ");
+  Serial.println(startTime);
+  timeremaining = (millis() - startTime);
+  Serial.println("Time Remaining = ");
+  Serial.println(timeremaining);
+
+ // MQTT sensor publish
+  unsigned long now = millis();
+  if (now - lastMqttPublish > mqttPublishInterval) {
+    lastMqttPublish = now;
+    float temp = dht.readTemperature();
+    float hum = dht.readHumidity();
+    if (!isnan(temp) && !isnan(hum)) {
+      publishSensorData(temp, hum);
+    }
+  }
+
+  //Display Values
+				   
   display.clearDisplay();
   display.setTextSize(2);
   display.setTextColor(SH110X_WHITE);
   display.setCursor(0, 0);
-  display.println("    Temp: ");
-  display.print("   ");
+  display.println("Temp: ");
+ // display.print("   ");
   display.print(dht.readTemperature());
-  display.print(" C");
+  display.println(" C");
  // display.println(" ");
-  display.println("   Humid: ");
-  display.print("   ");
+  display.println("Humid: ");
+  //display.print("   ");
   display.print(dht.readHumidity());
   display.print(" %");
   display.setTextSize(3);
-  display.setCursor(1, 85);
+  display.setCursor(0, 85);
   display.print(displayvalue);
   display.println();
   display.setTextSize(1);
