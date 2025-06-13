@@ -282,7 +282,7 @@ void loop() {
     else if (currentTemp > (setTemperature - hysteresis)) //Subtracting the hysteresis allows the latent heat in the coil to continue heating the air after power is removed
     {
       digitalWrite(HEATER_PIN, LOW); // Turn off heater
-      digitalWrite(FAN_PIN, LOW); // Turn off fan
+      digitalWrite(FAN_PIN, HIGH); // Keep fan running
       Serial.println("Turn Off...");
       displayvalue = "Standby";
     }
