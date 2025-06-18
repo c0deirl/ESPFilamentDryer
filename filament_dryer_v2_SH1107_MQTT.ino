@@ -7,8 +7,8 @@
 #include <PubSubClient.h> // MQTT Library										 
 
 // Replace with your network credentials
-const char* ssid = "SSID HERE";
-const char* password = "PASSWORD HERE";
+const char* ssid = "N8MDG";
+const char* password = "mattg123";
 
 // MQTT broker settings
 const char* mqtt_server = "192.168.1.71";    // e.g., "192.168.1.10" or "broker.hivemq.com"
