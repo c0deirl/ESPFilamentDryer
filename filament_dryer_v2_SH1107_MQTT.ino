@@ -372,14 +372,14 @@ if (!mqttClient.connected()) {
     
     //if (currentTemp < setTemperature - hysteresis) {
       if (currentTemp < setTemperature) {
-      digitalWrite(HEATER_PIN, LOW); // Turn on heater - SET TO HIGH IF USING ACTIVE HIGH SSR
+      digitalWrite(HEATER_PIN, LOW); // Turn on heater - SET TO HIGH IF USING ACTIVE HIGH SSR or RELAY
       digitalWrite(FAN_PIN, HIGH); // Turn on fan
       Serial.println("Turn On...");
       displayvalue = "Heating";
     } 
     else if (currentTemp > (setTemperature)) //Subtracting the hysteresis allows the latent heat in the coil to continue heating the air after power is removed
     {
-      digitalWrite(HEATER_PIN, HIGH); // Turn off heater - SET TO LOW IF USING ACTIVE HIGH SSR
+      digitalWrite(HEATER_PIN, HIGH); // Turn off heater - SET TO LOW IF USING ACTIVE HIGH SSR or RELAY
       digitalWrite(FAN_PIN, HIGH); // Keep Fan On
       Serial.println("Turn Off...");
       displayvalue = "Standby";
@@ -387,7 +387,7 @@ if (!mqttClient.connected()) {
 
     if ((millis() - startTime) > (duration * 60000)) {
       heating = false;
-      digitalWrite(HEATER_PIN, HIGH); // Turn off heater - SET TO LOW IF USING ACTIVE HIGH SSR
+      digitalWrite(HEATER_PIN, HIGH); // Turn off heater - SET TO LOW IF USING ACTIVE HIGH SSR or RELAY
       digitalWrite(FAN_PIN, LOW); // Turn off fan
       Serial.println("Finished");
       displayvalue = "STOP";
